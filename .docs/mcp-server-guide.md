@@ -1,329 +1,223 @@
 # MCP 서버 개발 가이드
 
-## MCP (Model Context Protocol) 개요
+## MCP (Model Context Protocol) 소개
 
-MCP는 AI 모델과 외부 도구/리소스 간의 표준화된 통신 프로토콜입니다. 이 가이드는 cli-mcp를 사용하여 MCP 서버를 개발하는 방법을 설명합니다.
+MCP는 LLM 애플리케이션이 외부 시스템과 통신하기 위한 표준화된 프로토콜입니다. AI 애플리케이션을 위한 USB-C 포트라고 생각하면 됩니다.
 
-## MCP 서버 기본 구조
+## 핵심 개념
 
-### 필수 컴포넌트
+### 1. Resources (리소스)
+- GET 엔드포인트와 유사
+- LLM 컨텍스트에 정보를 로드하는 데 사용
+- 예: 파일 내용, 데이터베이스 레코드, API 응답
 
-1. **서버 클래스**: MCP 프로토콜 구현
-2. **핸들러**: 요청 처리 로직
-3. **도구(Tools)**: 실행 가능한 기능
-4. **리소스(Resources)**: 제공할 데이터
-5. **프롬프트(Prompts)**: 미리 정의된 프롬프트 템플릿
+### 2. Tools (도구)
+- POST 엔드포인트와 유사
+- 코드 실행이나 부작용을 생성하는 데 사용
+- 예: 파일 쓰기, API 호출, 시스템 명령 실행
 
-### 디렉토리 구조
-```
-src/cli_mcp/servers/my_server/
-├── __init__.py
-├── server.py           # 메인 서버 구현
-├── config.py          # 설정 스키마
-├── handlers/          # 요청 핸들러
-│   ├── __init__.py
-│   ├── tools.py      # 도구 핸들러
-│   └── resources.py  # 리소스 핸들러
-├── tools/            # 도구 구현
-│   └── __init__.py
-├── resources/        # 리소스 구현
-│   └── __init__.py
-└── README.md         # 서버 문서
-```
+### 3. Prompts (프롬프트)
+- LLM 상호작용을 위한 재사용 가능한 템플릿
+- 일관된 사용자 경험 제공
 
-## 서버 구현 예시
+## 빠른 시작
 
-### 1. 기본 서버 클래스
+### 1. 기본 MCP 서버 구현
 
 ```python
-# server.py
-from typing import Any, Dict
-import asyncio
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
+from mcp.server.fastmcp import FastMCP
+from typing import Any
 
-class MyMCPServer(Server):
-    """커스텀 MCP 서버 구현."""
+# MCP 서버 초기화
+mcp = FastMCP("my-server")
 
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__("my-server")
-        self.config = config
-        self._setup_handlers()
+# Resource 정의
+@mcp.resource("config://settings")
+async def get_settings() -> str:
+    """현재 설정을 반환합니다."""
+    return "Current settings: debug=true"
 
-    def _setup_handlers(self):
-        """핸들러 등록."""
-        # 도구 핸들러
-        @self.list_tools()
-        async def list_tools():
-            return [
-                {
-                    "name": "example_tool",
-                    "description": "예시 도구",
-                    "inputSchema": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string"}
-                        },
-                        "required": ["query"]
-                    }
-                }
-            ]
+# Tool 정의
+@mcp.tool()
+async def calculate_sum(a: int, b: int) -> int:
+    """두 숫자의 합을 계산합니다."""
+    return a + b
 
-        @self.call_tool()
-        async def call_tool(name: str, arguments: Dict[str, Any]):
-            if name == "example_tool":
-                query = arguments.get("query", "")
-                return {"result": f"Processed: {query}"}
-            raise ValueError(f"Unknown tool: {name}")
-
-async def main():
-    """서버 실행."""
-    server = MyMCPServer({})
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(read_stream, write_stream)
-
+# 서버 실행
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()
 ```
 
-### 2. 도구 구현
+### 2. 전송 방식
 
+#### stdio (로컬 통신)
 ```python
-# tools/search.py
-from typing import Dict, Any
-from dataclasses import dataclass
-
-@dataclass
-class SearchTool:
-    """검색 도구 구현."""
-
-    name = "search"
-    description = "웹 검색 도구"
-
-    @property
-    def schema(self) -> Dict[str, Any]:
-        return {
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "검색 쿼리"
-                },
-                "limit": {
-                    "type": "integer",
-                    "description": "결과 개수",
-                    "default": 10
-                }
-            },
-            "required": ["query"]
-        }
-
-    async def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """도구 실행."""
-        query = arguments["query"]
-        limit = arguments.get("limit", 10)
-
-        # 실제 검색 로직 구현
-        results = await self._perform_search(query, limit)
-
-        return {
-            "results": results,
-            "count": len(results)
-        }
-
-    async def _perform_search(self, query: str, limit: int):
-        # 검색 구현
-        pass
+# stdio 전송 사용 (기본값)
+mcp.run(transport="stdio")
 ```
 
-### 3. 리소스 구현
-
+#### SSE (HTTP 통신)
 ```python
-# resources/database.py
-from typing import Dict, Any, List
-from dataclasses import dataclass
-
-@dataclass
-class DatabaseResource:
-    """데이터베이스 리소스."""
-
-    uri = "db://example"
-    name = "Example Database"
-    description = "예시 데이터베이스 접근"
-
-    async def read(self, path: str) -> Dict[str, Any]:
-        """리소스 읽기."""
-        # 데이터베이스 쿼리 로직
-        return {
-            "data": [],
-            "metadata": {
-                "path": path,
-                "timestamp": "2024-01-01T00:00:00Z"
-            }
-        }
-
-    async def list(self) -> List[str]:
-        """사용 가능한 리소스 목록."""
-        return [
-            "tables/users",
-            "tables/products",
-            "views/summary"
-        ]
+# HTTP/SSE 전송 사용
+mcp.run(transport="sse", port=8080)
 ```
 
-## 설정 관리
+## 보안 모범 사례
 
-### 설정 스키마 정의
-
+### 1. 입력 검증
 ```python
-# config.py
-from pydantic import BaseModel, Field
-from typing import Optional
+@mcp.tool()
+async def read_file(path: str) -> str:
+    # 경로 검증
+    safe_path = Path(path).resolve()
+    if not safe_path.is_relative_to(ALLOWED_DIR):
+        raise ValueError("접근이 허용되지 않은 경로입니다")
 
-class ServerConfig(BaseModel):
-    """서버 설정 스키마."""
-
-    host: str = Field(default="localhost", description="서버 호스트")
-    port: int = Field(default=8080, description="서버 포트")
-    api_key: Optional[str] = Field(default=None, description="API 키")
-    timeout: int = Field(default=30, description="요청 타임아웃(초)")
-
-    class Config:
-        env_prefix = "MY_SERVER_"  # 환경 변수 접두사
+    return safe_path.read_text()
 ```
 
-## 테스트 작성
-
-### 서버 테스트
-
+### 2. 인증 및 권한
 ```python
-# tests/test_my_server.py
+# HTTP 전송 시 인증 구현
+@mcp.middleware
+async def authenticate(request):
+    token = request.headers.get("Authorization")
+    if not validate_token(token):
+        raise Unauthorized("유효하지 않은 토큰")
+```
+
+### 3. 속도 제한
+```python
+from functools import lru_cache
+import time
+
+@mcp.tool()
+@rate_limit(calls=10, period=60)  # 분당 10회 제한
+async def expensive_operation():
+    # 리소스 집약적인 작업
+    pass
+```
+
+## 고급 패턴
+
+### 1. 비동기 처리
+```python
+import asyncio
+
+@mcp.tool()
+async def batch_process(items: list[str]) -> list[str]:
+    """여러 항목을 동시에 처리합니다."""
+    tasks = [process_item(item) for item in items]
+    return await asyncio.gather(*tasks)
+```
+
+### 2. 에러 처리
+```python
+from mcp.errors import ToolError
+
+@mcp.tool()
+async def risky_operation(data: str) -> str:
+    try:
+        result = await external_api_call(data)
+        return result
+    except ExternalAPIError as e:
+        raise ToolError(f"외부 API 오류: {e}")
+```
+
+### 3. 세션 관리
+```python
+from typing import Dict
+import uuid
+
+sessions: Dict[str, Any] = {}
+
+@mcp.tool()
+async def create_session() -> str:
+    """새 세션을 생성합니다."""
+    session_id = str(uuid.uuid4())
+    sessions[session_id] = {"created_at": time.time()}
+    return session_id
+```
+
+## 테스트
+
+### 단위 테스트
+```python
 import pytest
-from cli_mcp.servers.my_server import MyMCPServer
+from mcp.testing import MCPTestClient
 
 @pytest.mark.asyncio
-async def test_list_tools():
-    """도구 목록 테스트."""
-    server = MyMCPServer({})
-    tools = await server.list_tools()
+async def test_calculate_sum():
+    async with MCPTestClient(mcp) as client:
+        result = await client.call_tool("calculate_sum", {"a": 5, "b": 3})
+        assert result == 8
+```
 
-    assert len(tools) > 0
-    assert tools[0]["name"] == "example_tool"
-
+### 통합 테스트
+```python
 @pytest.mark.asyncio
-async def test_call_tool():
-    """도구 실행 테스트."""
-    server = MyMCPServer({})
-    result = await server.call_tool(
-        "example_tool",
-        {"query": "test"}
-    )
+async def test_full_workflow():
+    async with MCPTestClient(mcp) as client:
+        # 리소스 확인
+        settings = await client.get_resource("config://settings")
+        assert "debug=true" in settings
 
-    assert result["result"] == "Processed: test"
+        # 도구 사용
+        result = await client.call_tool("process_data", {"input": "test"})
+        assert result["status"] == "success"
 ```
 
-## 서버 등록
+## 배포 고려사항
 
-### CLI에 서버 추가
-
-1. `src/cli_mcp/servers/__init__.py`에 서버 등록:
-
+### 1. 환경 변수
 ```python
-from .my_server import MyMCPServer
+import os
+from dotenv import load_dotenv
 
-AVAILABLE_SERVERS = {
-    "my-server": {
-        "class": MyMCPServer,
-        "description": "나의 MCP 서버",
-        "config_schema": ServerConfig
-    }
-}
+load_dotenv()
+
+MCP_PORT = int(os.getenv("MCP_PORT", 8080))
+MCP_HOST = os.getenv("MCP_HOST", "0.0.0.0")
 ```
 
-2. CLI 명령어로 실행:
-
-```bash
-# 서버 시작
-cli-mcp server start my-server
-
-# 설정과 함께 시작
-cli-mcp server start my-server --config config.json
-```
-
-## 배포 준비
-
-### 1. 문서 작성
-- README.md: 서버 사용법
-- API 문서: 도구와 리소스 설명
-- 예시 설정 파일
-
-### 2. 패키징
-```python
-# pyproject.toml에 추가
-[project.entry-points."cli_mcp.servers"]
-my-server = "cli_mcp.servers.my_server:MyMCPServer"
-```
-
-### 3. 테스트 확인
-```bash
-# 단위 테스트
-uv run pytest tests/servers/test_my_server.py
-
-# 통합 테스트
-uv run cli-mcp server test my-server
-```
-
-## 모범 사례
-
-### 1. 오류 처리
-```python
-try:
-    result = await dangerous_operation()
-except SpecificError as e:
-    return {"error": str(e), "code": "SPECIFIC_ERROR"}
-except Exception as e:
-    logger.error(f"Unexpected error: {e}")
-    return {"error": "Internal server error", "code": "INTERNAL_ERROR"}
-```
-
-### 2. 비동기 프로그래밍
-- `async/await` 일관되게 사용
-- 블로킹 작업은 스레드풀 활용
-- 동시성 제한 설정
-
-### 3. 보안
-- 입력 검증 필수
-- 민감한 정보 로깅 금지
-- API 키 안전하게 관리
-
-### 4. 성능
-- 연결 풀링 사용
-- 결과 캐싱 고려
-- 리소스 정리 확실히
-
-## 디버깅 팁
-
-### 로깅 설정
+### 2. 로깅
 ```python
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+@mcp.tool()
+async def monitored_operation(data: str) -> str:
+    logger.info(f"작업 시작: {data[:20]}...")
+    result = await process(data)
+    logger.info(f"작업 완료: {len(result)} bytes")
+    return result
 ```
 
-### 프로토콜 디버깅
-```bash
-# 상세 로그와 함께 실행
-cli-mcp server start my-server --debug
-
-# 프로토콜 메시지 추적
-cli-mcp server start my-server --trace-protocol
+### 3. 헬스체크
+```python
+@mcp.resource("health://status")
+async def health_check() -> dict:
+    """서버 상태를 확인합니다."""
+    return {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "version": __version__
+    }
 ```
 
-## 참고 자료
+## 커뮤니티 리소스
 
 - [MCP 공식 문서](https://modelcontextprotocol.io)
-- [MCP Python SDK](https://github.com/anthropics/mcp-python)
-- [예시 서버 구현](https://github.com/anthropics/mcp-servers)
+- [Python SDK GitHub](https://github.com/modelcontextprotocol/python-sdk)
+- [MCP 서버 예제](https://github.com/modelcontextprotocol/servers)
+
+## 다음 단계
+
+1. 간단한 MCP 서버 구현으로 시작
+2. 보안 및 에러 처리 추가
+3. 테스트 작성
+4. 프로덕션 배포 준비
+
+이 가이드는 MCP 서버 개발의 기초를 다룹니다. 실제 구현 시에는 프로젝트의 특정 요구사항에 맞게 조정하세요.
