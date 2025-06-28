@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v2.0.1 (2025-06-28)
+
+### Bug Fixes
+
+- Rename package to cli-mcpx ([#6](https://github.com/cagojeiger/cli-mcpx/pull/6),
+  [`2d16afb`](https://github.com/cagojeiger/cli-mcpx/commit/2d16afbb9693aaa1da3677cf75d3ed2e3bcb26b6))
+
+- Rename package to cli-mcpx to avoid PyPI naming conflict
+  ([#6](https://github.com/cagojeiger/cli-mcpx/pull/6),
+  [`2d16afb`](https://github.com/cagojeiger/cli-mcpx/commit/2d16afbb9693aaa1da3677cf75d3ed2e3bcb26b6))
+
+### Documentation
+
+- Update changelog for package rename ([#6](https://github.com/cagojeiger/cli-mcpx/pull/6),
+  [`2d16afb`](https://github.com/cagojeiger/cli-mcpx/commit/2d16afbb9693aaa1da3677cf75d3ed2e3bcb26b6))
+
+
 ---
 
 ## Legacy History (cli-mcp/mcpcli)
