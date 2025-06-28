@@ -47,11 +47,11 @@ uv run pre-commit install
    ```python
    def example_function(param1: str, param2: int) -> bool:
        """간단한 설명.
-       
+
        Args:
            param1: 첫 번째 매개변수 설명
            param2: 두 번째 매개변수 설명
-           
+
        Returns:
            반환값 설명
        """
@@ -85,10 +85,10 @@ def test_version_option_displays_version(runner):
     """--version 옵션이 버전을 표시하는지 확인."""
     # Arrange
     from cli_mcp.cli import app
-    
+
     # Act
     result = runner.invoke(app, ["--version"])
-    
+
     # Assert
     assert result.exit_code == 0
     assert "cli-mcp version:" in result.stdout

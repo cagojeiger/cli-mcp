@@ -15,9 +15,10 @@ class TestCLI:
 
     def test_display_message(self, capsys):
         """Test display_message function."""
+
         def test_creator(value: str) -> str:
             return f"Test: {value}"
-        
+
         display_message(test_creator, "hello")
         captured = capsys.readouterr()
         assert captured.out == "Test: hello\n"
@@ -27,7 +28,7 @@ class TestCLI:
         with pytest.raises(SystemExit) as exc_info:
             exit_program(0)
         assert exc_info.value.code == 0
-        
+
         with pytest.raises(SystemExit) as exc_info:
             exit_program(1)
         assert exc_info.value.code == 1

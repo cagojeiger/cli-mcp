@@ -1,7 +1,5 @@
 """Tests for version-related functionality."""
 
-import pytest
-
 from cli_mcp import __version__
 from cli_mcp.cli import app, create_version_message
 

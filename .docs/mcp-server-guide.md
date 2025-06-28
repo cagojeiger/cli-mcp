@@ -44,12 +44,12 @@ from mcp.server.stdio import stdio_server
 
 class MyMCPServer(Server):
     """커스텀 MCP 서버 구현."""
-    
+
     def __init__(self, config: Dict[str, Any]):
         super().__init__("my-server")
         self.config = config
         self._setup_handlers()
-    
+
     def _setup_handlers(self):
         """핸들러 등록."""
         # 도구 핸들러
@@ -68,7 +68,7 @@ class MyMCPServer(Server):
                     }
                 }
             ]
-        
+
         @self.call_tool()
         async def call_tool(name: str, arguments: Dict[str, Any]):
             if name == "example_tool":
@@ -96,10 +96,10 @@ from dataclasses import dataclass
 @dataclass
 class SearchTool:
     """검색 도구 구현."""
-    
+
     name = "search"
     description = "웹 검색 도구"
-    
+
     @property
     def schema(self) -> Dict[str, Any]:
         return {
@@ -117,20 +117,20 @@ class SearchTool:
             },
             "required": ["query"]
         }
-    
+
     async def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """도구 실행."""
         query = arguments["query"]
         limit = arguments.get("limit", 10)
-        
+
         # 실제 검색 로직 구현
         results = await self._perform_search(query, limit)
-        
+
         return {
             "results": results,
             "count": len(results)
         }
-    
+
     async def _perform_search(self, query: str, limit: int):
         # 검색 구현
         pass
@@ -146,11 +146,11 @@ from dataclasses import dataclass
 @dataclass
 class DatabaseResource:
     """데이터베이스 리소스."""
-    
+
     uri = "db://example"
     name = "Example Database"
     description = "예시 데이터베이스 접근"
-    
+
     async def read(self, path: str) -> Dict[str, Any]:
         """리소스 읽기."""
         # 데이터베이스 쿼리 로직
@@ -161,7 +161,7 @@ class DatabaseResource:
                 "timestamp": "2024-01-01T00:00:00Z"
             }
         }
-    
+
     async def list(self) -> List[str]:
         """사용 가능한 리소스 목록."""
         return [
@@ -182,12 +182,12 @@ from typing import Optional
 
 class ServerConfig(BaseModel):
     """서버 설정 스키마."""
-    
+
     host: str = Field(default="localhost", description="서버 호스트")
     port: int = Field(default=8080, description="서버 포트")
     api_key: Optional[str] = Field(default=None, description="API 키")
     timeout: int = Field(default=30, description="요청 타임아웃(초)")
-    
+
     class Config:
         env_prefix = "MY_SERVER_"  # 환경 변수 접두사
 ```
@@ -206,7 +206,7 @@ async def test_list_tools():
     """도구 목록 테스트."""
     server = MyMCPServer({})
     tools = await server.list_tools()
-    
+
     assert len(tools) > 0
     assert tools[0]["name"] == "example_tool"
 
@@ -218,7 +218,7 @@ async def test_call_tool():
         "example_tool",
         {"query": "test"}
     )
-    
+
     assert result["result"] == "Processed: test"
 ```
 

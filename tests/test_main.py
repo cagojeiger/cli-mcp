@@ -3,8 +3,6 @@
 import subprocess
 import sys
 
-import pytest
-
 
 class TestMain:
     """Test __main__ module execution."""
