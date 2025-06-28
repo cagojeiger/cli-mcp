@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.2 (2025-06-28)
+
+### Bug Fixes
+
+- Update dependencies lock file ([#4](https://github.com/cagojeiger/cli-mcp/pull/4),
+  [`cacd0ec`](https://github.com/cagojeiger/cli-mcp/commit/cacd0ec3f4d3a3e40397bc950c64019370f739cb))
+
+
 ## v1.0.1 (2025-06-28)
 
 ### Bug Fixes
