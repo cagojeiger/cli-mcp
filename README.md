@@ -1,4 +1,4 @@
-# cli-mcp
+# mcpcli
 
 ## 빠른 시작
 
@@ -11,8 +11,8 @@
 pip install pipx
 pipx ensurepath
 
-# cli-mcp 설치
-pipx install cli-mcp
+# mcpcli 설치
+pipx install mcpcli
 ```
 
 #### 소스에서 설치

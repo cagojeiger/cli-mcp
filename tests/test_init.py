@@ -14,11 +14,11 @@ class TestInit:
             mock_version.side_effect = Exception("Package not found")
 
             # Remove the module from sys.modules to force reimport
-            if "cli_mcp" in sys.modules:
-                del sys.modules["cli_mcp"]
+            if "mcpcli" in sys.modules:
+                del sys.modules["mcpcli"]
 
             # Import the module
-            import cli_mcp
+            import mcpcli
 
             # Check that version falls back to "dev"
-            assert cli_mcp.__version__ == "dev"
+            assert mcpcli.__version__ == "dev"
