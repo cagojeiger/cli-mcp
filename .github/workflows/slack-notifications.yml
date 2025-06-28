@@ -1,31 +1,73 @@
 name: Slack Notifications
 
 on:
-  issues:
-    types: [opened, closed]
-  pull_request:
-    types: [opened, closed, merged]
-  push:
-    branches:
-      - main
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["*"]  # Monitor all workflows
+    types: [completed]
 
 jobs:
-  notify:
+  notify-slack:
+    if: |
+      github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - name: Send custom message to Slack
-        uses: 8398a7/action-slack@v3
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          status: ${{ job.status }}
-          text: |
-            Event: ${{ github.event_name }}
-            Repository: ${{ github.repository }}
-            Author: ${{ github.actor }}
-            ${{ github.event_name == 'issues' && format('Issue #{0}: {1}', github.event.issue.number, github.event.issue.title) || '' }}
-            ${{ github.event_name == 'pull_request' && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title) || '' }}
-            ${{ github.event_name == 'push' && format('Commit: {0}', github.event.head_commit.message) || '' }}
-            ${{ github.event_name == 'release' && format('Release: {0}', github.event.release.tag_name) || '' }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "❌ Workflow Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "❌ *Workflow Failed*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n${{ github.event.workflow_run.name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Actor:*\n${{ github.event.workflow_run.actor.login }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.event.workflow_run.head_branch }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Workflow URL:*\n<${{ github.event.workflow_run.html_url }}|View Failed Workflow>"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Click the link above to view the failed workflow details"
+                    }
+                  ]
+                }
+              ]
+            }

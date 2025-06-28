@@ -2,13 +2,38 @@ name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
+  pre-commit:
+    name: Pre-commit checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pre-commit hooks
+        run: uv run pre-commit run --all-files
+
   test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    needs: pre-commit
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -16,38 +41,29 @@ jobs:
         python-version: ["3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        enable-cache: true
-        cache-dependency-glob: "uv.lock"
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Set up Python ${{ matrix.python-version }}
-      run: uv python install ${{ matrix.python-version }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-    - name: Install dependencies
-      run: |
-        uv sync --all-extras --dev
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
 
-    - name: Lint with ruff
-      run: |
-        uv run ruff check src tests --config config/ruff.toml
-        uv run ruff format src tests --check --config config/ruff.toml
+      - name: Run tests
+        run: uv run pytest -v --cov-report=xml -c config/pytest.ini
 
-    - name: Type check
-      run: |
-        echo "Type checking will be added when mypy is configured"
-
-    - name: Run tests
-      run: |
-        uv run pytest -xvs -c config/pytest.ini
-
-    - name: Check coverage
-      run: |
-        uv run coverage run --rcfile=config/.coveragerc -m pytest -c config/pytest.ini
-        uv run coverage report --rcfile=config/.coveragerc
-        uv run coverage html --rcfile=config/.coveragerc
-        # Fail if below minimum coverage
-        uv run coverage report --rcfile=config/.coveragerc --fail-under=90
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
