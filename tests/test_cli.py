@@ -32,3 +32,9 @@ class TestCLI:
         with pytest.raises(SystemExit) as exc_info:
             exit_program(1)
         assert exc_info.value.code == 1
+
+    def test_main_callback(self, runner):
+        """Test main callback function."""
+        # This test ensures the main callback is covered
+        result = runner.invoke(app, [])
+        assert result.exit_code == 0

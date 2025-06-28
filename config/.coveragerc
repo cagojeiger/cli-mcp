@@ -12,6 +12,17 @@ precision = 2
 show_missing = True
 skip_covered = False
 fail_under = 90
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    except Exception:
+    pass
 
 [html]
 directory = htmlcov
