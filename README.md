@@ -1,1 +1,1 @@
-# cli-map
+# cli-mcp
