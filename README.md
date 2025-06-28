@@ -29,3 +29,5 @@ pipx install -e . --force
 ## 라이선스
 
 MIT License - [LICENSE](LICENSE) 파일 참조
+
+<!-- Version: 1.0.1 -->
