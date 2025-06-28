@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v2.0.0 (2025-06-28)
+
+### Bug Fixes
+
+- Update coverage config for renamed package ([#5](https://github.com/cagojeiger/mcpcli/pull/5),
+  [`23beeb9`](https://github.com/cagojeiger/mcpcli/commit/23beeb9695b375d738c012103def525986d9d95c))
+
+### Features
+
+- Rename package from cli-mcp to mcpcli ([#5](https://github.com/cagojeiger/mcpcli/pull/5),
+  [`23beeb9`](https://github.com/cagojeiger/mcpcli/commit/23beeb9695b375d738c012103def525986d9d95c))
+
+
 ## v1.0.2 (2025-06-28)
 
 ### Bug Fixes
