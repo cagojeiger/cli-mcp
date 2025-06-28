@@ -1,6 +1,6 @@
 [project]
-name = "mcpcli"
-version = "2.0.0"
+name = "cli-mcpx"
+version = "0.1.0"
 description = "A modern Python CLI tool for MCP (Model Context Protocol) server management"
 readme = "README.md"
 authors = [
@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-mcpcli = "mcpcli.cli:app"
+cli-mcpx = "cli_mcpx.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -46,7 +46,7 @@ dev = [
 [tool.semantic_release]
 branch = "main"
 version_toml = ["pyproject.toml:project.version"]
-version_variables = ["src/mcpcli/__init__.py:__version__"]
+version_variables = ["src/cli_mcpx/__init__.py:__version__"]
 build_command = "uv build"
 upload_to_pypi = false
 upload_to_release = true

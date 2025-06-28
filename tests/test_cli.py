@@ -2,7 +2,7 @@
 
 import pytest
 
-from mcpcli.cli import app, display_message, exit_program
+from cli_mcpx.cli import app, display_message, exit_program
 
 
 class TestCLI:
