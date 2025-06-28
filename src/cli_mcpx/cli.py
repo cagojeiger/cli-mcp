@@ -1,4 +1,4 @@
-"""CLI entry point for mcpcli."""
+"""CLI entry point for cli-mcpx."""
 
 import sys
 from collections.abc import Callable
@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from mcpcli import __version__
+from cli_mcpx import __version__
 
 
 def create_version_message(version: str) -> str:
@@ -16,7 +16,7 @@ def create_version_message(version: str) -> str:
 
     Pure function that formats the version message.
     """
-    return f"mcpcli version: {version}"
+    return f"cli-mcpx version: {version}"
 
 
 def display_message(message_creator: Callable[[str], str], version: str) -> None:
@@ -48,7 +48,7 @@ def version_callback(value: bool) -> None:
 
 # Create the main Typer app
 app = typer.Typer(
-    name="mcpcli",
+    name="cli-mcpx",
     help="A modern Python CLI tool for MCP (Model Context Protocol) server management",
     no_args_is_help=True,
     add_completion=True,

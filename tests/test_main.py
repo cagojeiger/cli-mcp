@@ -10,12 +10,12 @@ class TestMain:
     def test_module_execution(self):
         """Test running the module with python -m."""
         result = subprocess.run(
-            [sys.executable, "-m", "mcpcli", "--version"],
+            [sys.executable, "-m", "cli_mcpx", "--version"],
             capture_output=True,
             text=True,
         )
         assert result.returncode == 0
-        assert "mcpcli version:" in result.stdout
+        assert "cli-mcpx version:" in result.stdout
 
     def test_main_direct_execution(self):
         """Test direct execution of __main__.py."""
