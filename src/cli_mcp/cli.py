@@ -50,7 +50,8 @@ def version_callback(value: bool) -> None:
 app = typer.Typer(
     name="cli-mcp",
     help="A modern Python CLI tool for MCP (Model Context Protocol) server management",
-    no_args_is_help=False,
+    no_args_is_help=True,
+    add_completion=True,
 )
 
 
@@ -65,19 +66,18 @@ version_option = partial(
 )
 
 
-@app.callback(invoke_without_command=True)
+@app.callback()
 def main(
     ctx: typer.Context,
     version: Annotated[bool | None, version_option()] = None,
 ) -> None:
     """
-    CLI main entry point.
+    A modern Python CLI tool for MCP (Model Context Protocol) server management.
 
-    This callback runs before any command.
+    Use --help to see available commands and options.
+    Use --install-completion to set up shell auto-completion.
     """
-    # If no subcommand is provided, just exit successfully
-    if ctx.invoked_subcommand is None:
-        pass  # Version is handled by the callback
+    pass  # Version is handled by the callback if provided
 
 
 if __name__ == "__main__":
